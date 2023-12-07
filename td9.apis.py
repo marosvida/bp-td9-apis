@@ -143,7 +143,52 @@ def insert_candlestick_data(db_name, candlestick_json):
     conn.close()
     print("Data inserted successfully")
 
+# POST
+#1 Create order
+def create_order(direction, price, amount, pair, orderType):
+    url = "https://api.binance.com/api/v3/order"
+
+    # Parameters for the API call
+    params = {
+        'symbol': pair,
+        'side': direction,
+        'type': orderType,
+        'quantity': amount,
+        'price': price
+    }
+
+    print("Creating order...")
+    response = requests.post(url, params=params)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        print("Order created successfully")
+        return response.json()['orderId']
+    else:
+        print(f"Failed to create order: Status code {response.status_code}")
+        return None
+
+#2 Cancel order
+def cancel_order(orderId, pair):
+    url = "https://api.binance.com/api/v3/order"
+
+    # Parameters for the API call
+    params = {
+        'symbol': pair,
+        'orderId': orderId
+    }
+
+    print("Cancelling order...")
+    response = requests.delete(url, params=params)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        print("Order cancelled successfully")
+    else:
+        print(f"Failed to cancel order: Status code {response.status_code}")
+
 if __name__ == '__main__':
+    # GET
     #1 Get a list of all available cryptocurrencies and display it
     get_all_symbols()
 
@@ -162,6 +207,7 @@ if __name__ == '__main__':
     create_candlestick_table(db_name)
 
     #6 Store candle data in the db
+    candle_data = refreshDataCandle(pair='BTCUSDT', duration='5m')
     transformed_candle_data = []
     for candle in candle_data:
         transformed_candle_data.append([
@@ -173,5 +219,12 @@ if __name__ == '__main__':
             float(candle[5])   # volume
         ])
     insert_candlestick_data(db_name, transformed_candle_data)
+
+    # POST
+    #1 Create order
+    orderId = create_order('SELL', 1000, 1, pair ='BTCUSD_d', orderType = 'LIMIT')
+
+    #2 Cancel order
+    cancel_order(orderId, pair ='BTCUSD_d')
 
     
